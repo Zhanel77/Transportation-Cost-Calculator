@@ -1,6 +1,6 @@
 import streamlit as st
-import pandas as pd  # для красивых таблиц
-from least_cost_cell import solve_transportation  # твой модуль с алгоритмами
+import pandas as pd
+from least_cost_cell import solve_transportation   # твой файл с алгоритмом
 
 # -------------------------------------------------
 # PAGE CONFIG
@@ -44,7 +44,7 @@ with st.container():
     with col2:
         n = st.number_input("Destinations (n)", min_value=1, max_value=10, value=4)
 
-# cost matrix
+# ---- cost matrix ----
 st.markdown('<div class="card"><h4>Cost matrix cᵢⱼ</h4>', unsafe_allow_html=True)
 costs = []
 for i in range(m):
@@ -61,7 +61,7 @@ for i in range(m):
     costs.append(row)
 st.markdown("</div>", unsafe_allow_html=True)
 
-# supply & demand
+# ---- supply & demand ----
 st.markdown('<div class="card"><h4>Supply & Demand</h4>', unsafe_allow_html=True)
 col_s, col_d = st.columns(2)
 
@@ -98,10 +98,9 @@ if st.button("Solve transportation problem"):
     try:
         result = solve_transportation(costs, supply, demand)
     except ValueError as e:
-        # unbalanced
         st.error(str(e))
     else:
-        # ---------------- BALANCED PROBLEM ----------------
+        # ---------- BALANCED PROBLEM ----------
         st.markdown('<div class="card"><h4>Balanced problem</h4>', unsafe_allow_html=True)
         st.write("Cost matrix:")
         st.table(pd.DataFrame(costs))
@@ -109,7 +108,7 @@ if st.button("Solve transportation problem"):
         st.write(f"Demand: {demand}")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # ---------------- LEAST COST ----------------
+        # ---------- LEAST COST ----------
         st.markdown('<div class="card"><h4>Least Cost – steps</h4>', unsafe_allow_html=True)
         lc_steps = result["least_cost_steps"]
         for stp in lc_steps:
@@ -124,51 +123,52 @@ if st.button("Solve transportation problem"):
 
         st.write("Allocation (Least Cost):")
         df_lc = pd.DataFrame(result["least_cost_allocation"])
-        # убрать .0000
-        df_lc = df_lc.map(lambda x: int(x) if float(x).is_integer() else round(x, 2))
 
+        # аккуратное форматирование без FutureWarning
+        df_lc = df_lc.apply(
+            lambda col: col.map(lambda x: int(x) if float(x).is_integer() else round(x, 2))
+        )
         st.table(df_lc)
         st.write(f"Total cost (Least Cost): **{int(result['least_cost'])}**")
 
-        # degeneracy info
+        # ---------- DEGENERACY CHECK ----------
         if result["is_degenerate"]:
             st.warning(
-                "Degenerate basic feasible solution detected: "
-                f"occupied cells < m + n − 1 ({result['expected_basic_cells']}). "
-                "A small ε was added to make MODI work."
+                "Degenerate basic feasible solution: occupied cells < m + n − 1. "
+                "In this project we stop after the initial plan and do not run MODI."
             )
+            # тут просто НЕ показываем MODI и выходим
         else:
             st.success(
                 "Non-degenerate solution: number of occupied cells = m + n − 1 "
                 f"({result['expected_basic_cells']})."
             )
-        st.markdown("</div>", unsafe_allow_html=True)
 
-        # ---------------- MODI ----------------
-        st.markdown('<div class="card"><h4>MODI optimization</h4>', unsafe_allow_html=True)
+            # ---------- MODI ----------
+            st.markdown('<div class="card"><h4>MODI optimization</h4>', unsafe_allow_html=True)
 
-        modi_steps = result["modi_steps"]
-        if not modi_steps:
-            st.write("All wᵢⱼ ≤ 0 → current solution is optimal.")
-        else:
-            for idx, it in enumerate(modi_steps, start=1):
-                st.markdown(
-                    f'<div class="step-box"><b>Iter {idx}</b>: '
-                    f'enter (S{it["entering"][0]}, D{it["entering"][1]}), '
-                    f'w = {it["w"]:.2f}, '
-                    f'θ = {it["theta"]}, '
-                    f'loop = {it["loop"]}</div>',
-                    unsafe_allow_html=True,
-                )
-        st.markdown("</div>", unsafe_allow_html=True)
+            modi_steps = result["modi_steps"]
+            if not modi_steps:
+                st.write("All wᵢⱼ ≤ 0 → current solution is optimal.")
+            else:
+                for idx, it in enumerate(modi_steps, start=1):
+                    st.markdown(
+                        f'<div class="step-box"><b>Iter {idx}</b>: '
+                        f'enter (S{it["entering"][0]}, D{it["entering"][1]}), '
+                        f'w = {it["w"]:.2f}, '
+                        f'θ = {it["theta"]}, '
+                        f'loop = {it["loop"]}</div>',
+                        unsafe_allow_html=True,
+                    )
+            st.markdown("</div>", unsafe_allow_html=True)
 
-
-        st.write("Final allocation (after MODI):")
-        df_modi = pd.DataFrame(result["modi_allocation"])
-        df_modi = df_modi.map(lambda x: int(x) if float(x).is_integer() else round(x, 2))
-        st.table(df_modi)
-        st.write(f"Final cost: **{int(result['modi_cost'])}**")
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.write("Final allocation (after MODI):")
+            df_modi = pd.DataFrame(result["modi_allocation"])
+            df_modi = df_modi.apply(
+                lambda col: col.map(lambda x: int(x) if float(x).is_integer() else round(x, 2))
+            )
+            st.table(df_modi)
+            st.write(f"Final cost: **{int(result['modi_cost'])}**")
 
 else:
     st.info("Enter data above and press the button to solve.")
