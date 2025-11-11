@@ -1,205 +1,174 @@
-# app.py
 import streamlit as st
-from least_cost_cell import (
-    balance_problem,
-    least_cost_method_with_steps,
-    modi_optimize,
+import pandas as pd  # для красивых таблиц
+from least_cost_cell import solve_transportation  # твой модуль с алгоритмами
+
+# -------------------------------------------------
+# PAGE CONFIG
+# -------------------------------------------------
+st.set_page_config(page_title="Transportation Problem – Demo", layout="wide")
+
+# -------------------------------------------------
+# SIMPLE STYLE
+# -------------------------------------------------
+st.markdown(
+    """
+    <style>
+    .card {
+        background: #f3f4f6;
+        padding: 1rem 1.2rem;
+        border-radius: 1rem;
+        margin-bottom: 1rem;
+    }
+    .step-box {
+        background: #e2e8f0;
+        padding: .45rem .75rem;
+        border-radius: .6rem;
+        margin-bottom: .4rem;
+        font-size: .9rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
-st.set_page_config(page_title="Transportation Demo", layout="wide")
+st.title("TRANSPORTATION PROBLEM – DEMO")
+st.write("Least Cost → MODI")
 
-
-st.markdown("""
-<style>
-/* ===== GENERAL PAGE STYLING ===== */
-body {
-    background: radial-gradient(circle at top, #0f172a 0%, #020617 70%);
-    font-family: 'Inter', sans-serif;
-    color: #e2e8f0;
-}
-
-.main .block-container {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-    max-width: 1100px;
-}
-
-/* ===== TITLES ===== */
-h1, h2, h3, .app-title {
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-}
-
-.app-title {
-    font-size: 2.2rem;
-    color: #f8fafc;
-    text-align: center;
-    margin-bottom: 0.25rem;
-}
-
-.app-subtitle {
-    text-align: center;
-    font-size: 1.1rem;
-    color: #38bdf8;
-    margin-bottom: 1.5rem;
-}
-
-/* ===== CARD / PANEL ===== */
-.card {
-    background: rgba(30, 41, 59, 0.55);
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    border-radius: 18px;
-    padding: 1.4rem 1.6rem;
-    margin-bottom: 1.4rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-    backdrop-filter: blur(12px);
-    transition: all 0.3s ease;
-}
-.card:hover {
-    border-color: rgba(56,189,248,0.5);
-    box-shadow: 0 6px 20px rgba(56,189,248,0.25);
-}
-
-/* ===== INPUT LABELS ===== */
-label, .stNumberInput label, .stTextInput label {
-    color: #cbd5e1 !important;
-    font-weight: 500;
-}
-
-/* ===== BUTTON ===== */
-.stButton>button {
-    background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
-    color: #f8fafc;
-    border: none;
-    border-radius: 999px;
-    padding: 0.5rem 1.5rem;
-    font-weight: 600;
-    font-size: 0.95rem;
-    box-shadow: 0 3px 10px rgba(56,189,248,0.4);
-    transition: all 0.25s ease;
-}
-.stButton>button:hover {
-    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 5px 14px rgba(56,189,248,0.6);
-}
-
-/* ===== TABLES ===== */
-table {
-    border-collapse: collapse;
-    width: 100%;
-}
-thead th {
-    background: rgba(30,41,59,0.9);
-    color: #38bdf8;
-    font-weight: 600;
-    text-align: center;
-    padding: 0.6rem;
-}
-tbody td {
-    background: rgba(15,23,42,0.6);
-    text-align: center;
-    padding: 0.5rem;
-    color: #e2e8f0;
-}
-tbody tr:hover td {
-    background: rgba(56,189,248,0.1);
-}
-
-/* ===== STEP BOX ===== */
-.step-box {
-    background: rgba(56,189,248,0.1);
-    border: 1px solid rgba(56,189,248,0.25);
-    border-radius: 12px;
-    padding: 0.6rem 0.9rem;
-    margin-bottom: 0.6rem;
-    color: #e2e8f0;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-}
-.step-box:hover {
-    background: rgba(56,189,248,0.15);
-}
-
-/* ===== INFO BOX ===== */
-.info-box {
-    background: rgba(37,99,235,0.15);
-    border: 1px solid rgba(59,130,246,0.35);
-    border-radius: 12px;
-    padding: 0.6rem 0.9rem;
-    font-size: 0.88rem;
-    color: #f1f5f9;
-}
-
-/* ===== CODE TEXT ===== */
-code {
-    background: rgba(15,23,42,0.35);
-    color: #facc15;
-    padding: 2px 6px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-st.markdown("## Transportation Problem – Demo")
-st.write("Least Cost -> MODI")
-
-col1, col2 = st.columns(2)
-with col1:
-    m = st.number_input("Sources (m)", 1, 10, 3)
-with col2:
-    n = st.number_input("Destinations (n)", 1, 10, 4)
+# -------------------------------------------------
+# 1. INPUTS
+# -------------------------------------------------
+with st.container():
+    col1, col2 = st.columns(2)
+    with col1:
+        m = st.number_input("Sources (m)", min_value=1, max_value=10, value=3)
+    with col2:
+        n = st.number_input("Destinations (n)", min_value=1, max_value=10, value=4)
 
 # cost matrix
-st.markdown('<div class="card">Cost matrix Cij</div>', unsafe_allow_html=True)
+st.markdown('<div class="card"><h4>Cost matrix cᵢⱼ</h4>', unsafe_allow_html=True)
 costs = []
 for i in range(m):
-    cols = st.columns(n)
+    row_cols = st.columns(n)
     row = []
     for j in range(n):
-        row.append(cols[j].number_input(f"c[{i+1},{j+1}]", 0, 9999, 1, key=f"c_{i}_{j}"))
+        val = row_cols[j].number_input(
+            f"c[{i+1},{j+1}]",
+            min_value=0,
+            value=1,
+            key=f"c_{i}_{j}",
+        )
+        row.append(val)
     costs.append(row)
+st.markdown("</div>", unsafe_allow_html=True)
 
-# supply / demand
-st.markdown('<div class="card">Supply & Demand</div>', unsafe_allow_html=True)
-c1, c2 = st.columns(2)
-with c1:
-    supply = [st.number_input(f"supply[{i+1}]", 0, 9999, 10, key=f"s_{i}") for i in range(m)]
-with c2:
-    demand = [st.number_input(f"demand[{j+1}]", 0, 9999, 10, key=f"d_{j}") for j in range(n)]
+# supply & demand
+st.markdown('<div class="card"><h4>Supply & Demand</h4>', unsafe_allow_html=True)
+col_s, col_d = st.columns(2)
 
+supply = []
+with col_s:
+    for i in range(m):
+        supply.append(
+            st.number_input(
+                f"supply[{i+1}]",
+                min_value=0,
+                value=10,
+                key=f"s_{i}",
+            )
+        )
+
+demand = []
+with col_d:
+    for j in range(n):
+        demand.append(
+            st.number_input(
+                f"demand[{j+1}]",
+                min_value=0,
+                value=10,
+                key=f"d_{j}",
+            )
+        )
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# -------------------------------------------------
+# 2. SOLVE
+# -------------------------------------------------
 if st.button("Solve transportation problem"):
     try:
-        b_costs, b_supply, b_demand, dr, dc = balance_problem(costs, supply, demand)
+        result = solve_transportation(costs, supply, demand)
     except ValueError as e:
+        # unbalanced
         st.error(str(e))
     else:
-        st.subheader("Balanced problem")
-        st.table(b_costs)
-        st.write("Supply:", b_supply)
-        st.write("Demand:", b_demand)
-        if dr: st.info("Dummy source was added")
-        if dc: st.info("Dummy destination was added")
+        # ---------------- BALANCED PROBLEM ----------------
+        st.markdown('<div class="card"><h4>Balanced problem</h4>', unsafe_allow_html=True)
+        st.write("Cost matrix:")
+        st.table(pd.DataFrame(costs))
+        st.write(f"Supply: {supply}")
+        st.write(f"Demand: {demand}")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        alloc_lc, cost_lc, steps = least_cost_method_with_steps(b_costs, b_supply, b_demand)
-        st.subheader("Least Cost – steps")
-        for idx, stp in enumerate(steps, start=1):
-            st.write(
-                f"Step {idx}: choose (S{stp['cell'][0]}, D{stp['cell'][1]}) "
-                f"cost={stp['cost']}, allocate {stp['allocated']}"
+        # ---------------- LEAST COST ----------------
+        st.markdown('<div class="card"><h4>Least Cost – steps</h4>', unsafe_allow_html=True)
+        lc_steps = result["least_cost_steps"]
+        for stp in lc_steps:
+            st.markdown(
+                f'<div class="step-box">'
+                f'<b>Step {stp["step"]}</b>: choose cell (S{stp["cell"][0]}, D{stp["cell"][1]}) '
+                f'with cost <code>{stp["cost"]}</code>, allocate <b>{stp["allocated"]}</b> '
+                f'(supply → {stp["supply_after"]}, demand → {stp["demand_after"]})'
+                f'</div>',
+                unsafe_allow_html=True,
             )
-        st.table(alloc_lc)
-        st.write(f"Total cost: {cost_lc}")
 
-        alloc_modi, cost_modi, modi_iters = modi_optimize(b_costs, alloc_lc)
-        st.subheader("MODI optimization")
-        if not modi_iters:
-            st.write("No negative reduced costs → plan is optimal.")
+        st.write("Allocation (Least Cost):")
+        df_lc = pd.DataFrame(result["least_cost_allocation"])
+        # убрать .0000
+        df_lc = df_lc.map(lambda x: int(x) if float(x).is_integer() else round(x, 2))
+
+        st.table(df_lc)
+        st.write(f"Total cost (Least Cost): **{int(result['least_cost'])}**")
+
+        # degeneracy info
+        if result["is_degenerate"]:
+            st.warning(
+                "Degenerate basic feasible solution detected: "
+                f"occupied cells < m + n − 1 ({result['expected_basic_cells']}). "
+                "A small ε was added to make MODI work."
+            )
         else:
-            for it in modi_iters:
-                st.write(it)
-        st.table(alloc_modi)
-        st.write(f"Final cost: {cost_modi}")
+            st.success(
+                "Non-degenerate solution: number of occupied cells = m + n − 1 "
+                f"({result['expected_basic_cells']})."
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # ---------------- MODI ----------------
+        st.markdown('<div class="card"><h4>MODI optimization</h4>', unsafe_allow_html=True)
+
+        modi_steps = result["modi_steps"]
+        if not modi_steps:
+            st.write("All wᵢⱼ ≤ 0 → current solution is optimal.")
+        else:
+            for idx, it in enumerate(modi_steps, start=1):
+                st.markdown(
+                    f'<div class="step-box"><b>Iter {idx}</b>: '
+                    f'enter (S{it["entering"][0]}, D{it["entering"][1]}), '
+                    f'w = {it["w"]:.2f}, '
+                    f'θ = {it["theta"]}, '
+                    f'loop = {it["loop"]}</div>',
+                    unsafe_allow_html=True,
+                )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+        st.write("Final allocation (after MODI):")
+        df_modi = pd.DataFrame(result["modi_allocation"])
+        df_modi = df_modi.map(lambda x: int(x) if float(x).is_integer() else round(x, 2))
+        st.table(df_modi)
+        st.write(f"Final cost: **{int(result['modi_cost'])}**")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+else:
+    st.info("Enter data above and press the button to solve.")
