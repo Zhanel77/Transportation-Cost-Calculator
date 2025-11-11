@@ -2,26 +2,26 @@
 from copy import deepcopy
 
 def balance_problem(costs, supply, demand):
+    """
+    Strict version: checks if the problem is balanced.
+    If total supply != total demand -> raise ValueError.
+    """
     costs = deepcopy(costs)
     supply = deepcopy(supply)
     demand = deepcopy(demand)
+
     sum_s = sum(supply)
     sum_d = sum(demand)
+
+    if sum_s != sum_d:
+        raise ValueError(
+            f"Unbalanced transportation problem: total supply = {sum_s}, "
+            f"total demand = {sum_d}. They must be equal."
+        )
+
+    # если равны – просто возвращаем как есть
     dummy_row = False
     dummy_col = False
-
-    if sum_s > sum_d:
-        diff = sum_s - sum_d
-        demand.append(diff)
-        for r in costs:
-            r.append(0)
-        dummy_col = True
-    elif sum_d > sum_s:
-        diff = sum_d - sum_s
-        supply.append(diff)
-        costs.append([0] * len(demand))
-        dummy_row = True
-
     return costs, supply, demand, dummy_row, dummy_col
 
 
@@ -52,7 +52,10 @@ def least_cost_method_with_steps(costs, supply, demand):
         supply[i] -= qty
         demand[j] -= qty
 
-    total_cost = sum(alloc[i][j] * costs[i][j] for i in range(m) for j in range(n))
+    total_cost = sum(
+        alloc[i][j] * costs[i][j]
+        for i in range(m) for j in range(n)
+    )
     return alloc, total_cost, steps
 
 
