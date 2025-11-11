@@ -1,10 +1,10 @@
 import streamlit as st
 from copy import deepcopy
 
-# =========== PAGE CONFIG ===========
+#PAGE CONFIG 
 st.set_page_config(page_title="Transportation Demo", layout="wide")
 
-# =========== CUSTOM CSS ===========
+#CUSTOM CSS 
 st.markdown("""
 <style>
 body {
@@ -79,11 +79,11 @@ code {
 """, unsafe_allow_html=True)
 
 
-# =========== TITLE ===========
+# TITLE 
 st.markdown('<div class="app-title">Transportation Problem – Demo</div>', unsafe_allow_html=True)
 st.markdown('<div class="app-subtitle">Least Cost → MODI</div>', unsafe_allow_html=True)
 
-# =========== INPUTS ===========
+#INPUTS 
 with st.container():
     col1, col2 = st.columns(2)
     with col1:
@@ -118,7 +118,7 @@ with c2:
 st.markdown('</div>', unsafe_allow_html=True)
 
 
-# =========== ALGO FUNCTIONS ===========
+#ALGO FUNCTIONS 
 def balance_problem(costs, supply, demand):
     costs = deepcopy(costs)
     supply = deepcopy(supply)
@@ -286,7 +286,7 @@ def modi_optimize(costs, alloc):
     return alloc, total, iterations
 
 
-# =========== SOLVE BUTTON ===========
+# SOLVE BUTTON 
 if st.button("Solve transportation problem"):
     b_costs, b_supply, b_demand, dr, dc = balance_problem(costs, supply, demand)
 
