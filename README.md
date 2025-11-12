@@ -84,7 +84,7 @@ streamlit run app.py
 
 ## Contribution
 
-# Team:
+### Team members:
 
 - Kuandyk Zhanel
 - Seipolla Koblandy
