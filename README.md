@@ -81,3 +81,11 @@ streamlit run app.py
 - Calculates opportunity costs for unoccupied cells
 - Identifies improving cells and creates closed loops
 - Reallocates quantities to reduce total cost
+
+## Contribution
+
+# Team:
+
+- Kuandyk Zhanel
+- Seipolla Koblandy
+- Kenzhekeyev Runar
